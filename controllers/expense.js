@@ -59,7 +59,7 @@ exports.postAddExpense = async (req, res) => {
         });
     }catch(err){
         console.log('POST ADD EXPENSE ERROR');
-        console.log(err);
+        //console.log(err);
         res.status(500).json({ error: err, msg: 'Could not add expense' });
     }
 }
@@ -67,22 +67,12 @@ exports.postAddExpense = async (req, res) => {
 exports.getAllExpenses = async (req, res) => {
     try{
         const user = req.user;
-        //const page = parseInt(req.query.page);
-        //const limit = parseInt(req.query.limit);
+        const page = parseInt(req.query.page);
+        const limit = parseInt(req.query.limit);
 
         const expenses = user.getExpensesArray();
 
-        //console.log(expenses);
-
-        res.status(200).json({
-            expenses: expenses,
-            balance: user.balance
-        });
-
-        /* const expenses = await Expense.findAll({ where: {userId: user.id} });
-        const userFromDB = await User.findOne({ where: {id: user.id} }); */
-
-        /* const startIndex = (page - 1) * limit;
+        const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
         const nextPage = endIndex < expenses.length ? page + 1 : null;
         const prevPage = startIndex > 0 ? page - 1 : null;
@@ -92,11 +82,12 @@ exports.getAllExpenses = async (req, res) => {
             nextPage: nextPage,
             prevPage: prevPage,
             limit,
-            expenses: expenses.reverse().slice(startIndex, endIndex),
-            balance: userFromDB.balance
-        }); */
+            expenses: expenses.slice(startIndex, endIndex),
+            balance: user.balance
+        });
     }catch(err){
         console.log('GET ALL EXPENSES ERROR');
+        //console.log(err);
         res.status(500).json({ error: err, msg: 'Could not fetch expenses'});
     }
 }
@@ -119,6 +110,7 @@ exports.deleteDeleteExpense = async (req, res) => {
         res.status(200).json({ amount: amountToDelete }); 
     }catch(err){
         console.log('POST DELETE EXPENSE ERROR');
+        //console.log(err);
         res.status(500).json({ error: err, msg: 'Could not delete expense' });
     }
 };
@@ -144,6 +136,7 @@ exports.getEditExpense = async (req, res) => {
         });
     }catch(err){
         console.log('GET EDIT EXPENSE ERROR');
+        //console.log(err);
         res.status(500).json({ error: err, msg: 'Could not get expense info' });
     }
 }
