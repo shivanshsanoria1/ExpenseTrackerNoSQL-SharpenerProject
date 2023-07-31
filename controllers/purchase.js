@@ -1,60 +1,69 @@
-require('dotenv').config();
 const Razorpay = require('razorpay');
 
 const Order = require('../models/order');
 const userController = require('./user');
 
-exports.purchasePremium = (req, res) => {
-    const rzp = new Razorpay({ 
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET
-    });
-    const amount = 2500; //amount is in paise and not rupees
-    let rzpOrder;
-    rzp.orders.create({amount: amount, currency:'INR'})
-    .then((order) => {
-        rzpOrder = order;
-        return req.user.createOrder({orderid: order.id, status: 'PENDING'});
-    })
-    .then((order) => {
-        res.status(201).json({order: rzpOrder, key_id: rzp.key_id});
-        return;
-    })
-    .catch((err) => {console.log(err);
+exports.purchasePremium = async (req, res) => {
+    try{
+        const user = req.user;
+
+        const rzp = new Razorpay({ 
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+    
+        const amount = 2500; // amount is in paise and not rupees
+        const rzpOrder = await rzp.orders.create({ amount: amount, currency:'INR' });
+
+        const orderObj = new Order({
+            status: 'PENDING',
+            orderId: rzpOrder.id,
+            userId: user._id
+        });
+        await orderObj.save();
+
+        res.status(201).json({ order: rzpOrder, key_id: rzp.key_id });
+    }catch(err){
+        console.log('PURCHASE PREMIUM ERROR');
+        //console.log(err);
         res.status(403).json({error: err, msg: 'something went wrong'});
-    });
+    }
 }
 
 exports.updateTransactionStatus = async (req, res) => {
-    const {payment_id, order_id, status} = req.body;
-    const userId = req.user.id;
-    const username = req.user.username;
+    const { payment_id, order_id, status } = req.body;
+    const user = req.user;
+    
     try{
-        const order = await Order.findOne({where: {orderid: order_id}});
-        const promise1 = 
-            status === 'success' ? 
-            order.update({paymentid: payment_id, status: 'SUCCESSFUL'}) : //payment successful
-            order.update({status: 'FAILED'}); //payment failed
-        const promise2 = 
-            status === 'success' ? 
-            req.user.update({isPremiumUser: true}) : 
-            req.user.update({isPremiumUser: false}) ;
-        Promise.all([promise1, promise2])
-        .then(() => {
-            if(status === 'success'){
-                return res.status(200).json({
-                    success: true, msg: 'Transaction Successful', 
-                    token: userController.generateAccessToken(userId, username, true)
-                });
-            }else{
-                return res.status(200).json({success: false, msg: 'Transaction Failed'});
-            }
-        })
-        .catch((err) => {
-            throw new Error(err);
-        });
+        // change the order status from PENDING to SUCCESSFUL / FAILED
+        if(status === 'success'){
+            await Order.findOneAndUpdate({ orderId: order_id }, {
+                paymentId: payment_id,
+                status: 'SUCCESSFUL',
+                updatedAt: new Date()
+            });
+
+            // make the user a premium user
+            user.isPremiumUser = 1;
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                msg: 'Transaction Successful', 
+                token: userController.generateAccessToken(user._id, user.username, true)
+            });
+
+        }else{
+            await Order.findOneAndUpdate({ orderId: order_id }, {
+                status: 'FAILED',
+                updatedAt: new Date()
+            });
+
+            return res.status(200).json({success: false, msg: 'Transaction Failed'});
+        }
     }catch(err){
-        console.log(err);
+        console.log('UPDATE TRANSACTION STATUS ERROR');
+        //console.log(err);
         res.status(403).json({error: err, msg: 'something went wrong'});
     }
 }
