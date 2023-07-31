@@ -7,7 +7,12 @@ const User = require('../models/user');
 const { isPremiumUser } = require('../middleware/auth');
 
 function generateAccessToken(id, name, isPremiumUser){
-    return jwt.sign({userId: id, username: name, isPremiumUser}, process.env.JWT_SECRET_KEY);
+    return jwt.sign({
+        userId: id.toString(), 
+        username: name, 
+        isPremiumUser
+        }, process.env.JWT_SECRET_KEY
+    );
 }
 
 exports.generateAccessToken = generateAccessToken;
@@ -73,7 +78,7 @@ exports.postLogin = async (req, res) => {
         if(match){
             res.status(200).json({ 
                 msg: 'User logged in successfully', 
-                token: generateAccessToken(user.id, user.username, user.isPremiumUser) 
+                token: generateAccessToken(user._id, user.username, user.isPremiumUser) 
             });
             return;
         }else{
