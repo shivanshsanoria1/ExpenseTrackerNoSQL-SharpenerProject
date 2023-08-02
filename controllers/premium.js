@@ -1,33 +1,56 @@
 const User = require('../models/user');
-const Expense = require('../models/expense');
 const DownloadedExpenseFile = require('../models/downloadedExpenseFile');
 const S3Services = require('../services/s3');
 
+function csvMaker(arr){
+    if(arr.length === 0){
+        return '';
+    }
+
+    const result = [Object.keys(arr[0])];
+    for(obj of arr){
+        result.push(Object.values(obj).toString());
+    }
+
+    return result.join('\n');
+}
+
 exports.getLeaderboard = async (req, res) => {
-    const users = await User.findAll({
-        attributes: ['username', 'balance'],
-        order: [['balance', 'DESC']]
-    });
-    res.status(200).json(users.slice(0,5));
+    const users = await User.find()
+    .select('username balance -_id') // select username, balance and remove _id fields
+    .sort({ balance: -1 }) // sort in decreasing order of balance
+    .limit(5); // limit the number of users to 5
+
+    res.status(200).json(users);
 }
 
 exports.getDownloadExpenses = async (req, res) => {
     try{
         const user = req.user;
-        const userId = user.id;
-        const expenses = await Expense.findAll({ where: {userId}});
-        const stringifiedExpenses = JSON.stringify(expenses);
-        const filename = `Expenses_${userId}_${new Date()}.txt`;
-        const fileURL = await S3Services.uploadToS3(stringifiedExpenses, filename);
 
-        await DownloadedExpenseFile.create({
-            fileURL,
-            userId
+        const expenses = user.expenseDetails.map((exp) => {
+            return {
+                AMOUNT: exp.amount,
+                DESCRIPTION: exp.description,
+                CATEGORY: exp.category,
+                CREATED_AT: exp.createdAt,
+                UPDATED_AT: exp.updatedAt
+            };
         });
 
-        res.status(200).json(fileURL);
+        const filename = `Expenses_${user._id.toString()}_${new Date()}.csv`;
+        const fileUrl = await S3Services.uploadToS3(csvMaker(expenses), filename);
+
+        const expenseFile = new DownloadedExpenseFile({
+            fileUrl: fileUrl,
+            userId: user._id
+        });
+        await expenseFile.save();
+
+        res.status(200).json(fileUrl);
     }catch(err){
         console.log('GET DOWNLOAD EXPENSES ERROR');
+        //console.log(err);
         res.status(500).json({error: err, msg: 'Could not get download link'});
     }
 }
@@ -35,10 +58,16 @@ exports.getDownloadExpenses = async (req, res) => {
 exports.getDownloadExpenseFileHistory = async (req, res) => {
     try{
         const user = req.user;
-        const expenseFileList = await DownloadedExpenseFile.findAll({where: {userId: user.id}});
-        res.status(200).json(expenseFileList.reverse().slice(0,10));
+
+        const expenseFileList = await DownloadedExpenseFile.find({ userId: user._id.toString()})
+        .select('fileUrl createdAt -_id') // select fileUrl, createdAt and remove _id fields
+        .sort({ createdAt: -1 }) // sort in decreasing order of date, ie, latest date first
+        .limit(10);
+
+        res.status(200).json(expenseFileList);
     }catch(err){
         console.log('GET DOWNLOADED EXPENSE FILE HISTORY ERROR');
+        //console.log(err);
         res.status(500).json({error: err, msg: 'Could not get download expense file history'});
     }
 }

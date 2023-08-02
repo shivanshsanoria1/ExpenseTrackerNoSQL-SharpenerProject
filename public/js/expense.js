@@ -293,8 +293,8 @@ function logoutUser(){
 function downloadExpenses(){
     axios.get(`${HOST}/premium/download-expenses`, {headers: {'Authorization': token}})
     .then((res) => {
-        const fileURL = res.data;
-        window.open(fileURL, '_blank');
+        const fileUrl = res.data;
+        window.open(fileUrl, '_blank');
     })
     .catch((err) => {
         showErrorInDOM('Error: Could not get expenses file :(');
@@ -374,10 +374,10 @@ function showDownloadedExpenseFileHistoryInDOM(){
     axios.get(`${HOST}/premium/downloaded-expense-file-history`, {headers: {'Authorization': token}})
     .then((res) => {
         downloadHistoryHeading.innerText = 'Download History (Last 10)';
-        const list = res.data.reverse();
+        const list = res.data;
         downloadHistoryList.innerText = '';
         let rank = 1;
-        list.reverse().forEach((item) => {
+        list.forEach((item) => {
             showDownloadInDOM(item, rank);
             rank++;
         });
