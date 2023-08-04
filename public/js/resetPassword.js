@@ -1,4 +1,4 @@
-const HOST = 'http://' + window.location.host;
+const ORIGIN = window.location.origin;
 
 const form = document.getElementById('user-form');
 const password1Input = document.getElementById('password1');
@@ -12,11 +12,15 @@ function resetPassword(e){
         showErrorInDOM('Passwords must match');
         return;
     }
+    const splitLink = window.location.href.split('/');
+    const userId = splitLink[splitLink.length - 2];
+    const token = splitLink[splitLink.length - 1];
     const user = {
         password: password1Input.value,
-        link: window.location.href
+        userId: userId,
+        token: token
     };
-    axios.post(`${HOST}/password/reset-password`, user)
+    axios.post(`${ORIGIN}/password/reset-password`, user)
     .then((res) => {
         const msg = res.data.msg;
         showSuccessInDOM(msg);

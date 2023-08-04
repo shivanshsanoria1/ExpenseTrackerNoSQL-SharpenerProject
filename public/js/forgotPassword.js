@@ -1,4 +1,4 @@
-const HOST = 'http://' + window.location.host;
+const ORIGIN = window.location.origin;
 
 const form = document.getElementById('user-form');
 const emailInput = document.getElementById('email');
@@ -10,7 +10,7 @@ function forgotPassword(e){
     const user = {
         email: emailInput.value
     };
-    axios.post(`${HOST}/password/forgot-password`, user)
+    axios.post(`${ORIGIN}/password/forgot-password`, user)
     .then((res) => {
         const msg = res.data.msg;
         showSuccessInDOM(msg);

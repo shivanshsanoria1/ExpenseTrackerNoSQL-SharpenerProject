@@ -1,4 +1,4 @@
-const HOST = 'http://' + window.location.host;
+const ORIGIN = window.location.origin;
 
 const form = document.getElementById('user-form');
 const usernameInput = document.getElementById('username');
@@ -19,7 +19,7 @@ function addUser(e){
         email: emailInput.value,
         password: password1Input.value
     };
-    axios.post(`${HOST}/user/signup`, user)
+    axios.post(`${ORIGIN}/user/signup`, user)
     .then((res) => {
         const msg = res.data.msg;
         showSuccessInDOM(msg);

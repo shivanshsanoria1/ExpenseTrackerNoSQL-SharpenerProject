@@ -1,4 +1,4 @@
-const HOST = 'http://' + window.location.host;
+const ORIGIN = window.location.origin;
 
 const form = document.getElementById('user-form');
 const emailInput = document.getElementById('email');
@@ -12,7 +12,7 @@ function loginUser(e){
         email: emailInput.value,
         password: passwordInput.value
     };
-    axios.post(`${HOST}/user/login`, user)
+    axios.post(`${ORIGIN}/user/login`, user)
     .then((res) => {
         localStorage.setItem('token', res.data.token);
         window.location.href = '/expense/add-expense';
