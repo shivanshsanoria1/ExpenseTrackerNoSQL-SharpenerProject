@@ -1,19 +1,7 @@
 const User = require('../models/user');
 const DownloadedExpenseFile = require('../models/downloadedExpenseFile');
 const S3Services = require('../services/s3');
-
-function csvMaker(arr){
-    if(arr.length === 0){
-        return '';
-    }
-
-    const result = [Object.keys(arr[0])];
-    for(obj of arr){
-        result.push(Object.values(obj).toString());
-    }
-
-    return result.join('\n');
-}
+const { csvMaker } = require('../helpers/csvMaker');
 
 exports.getLeaderboard = async (req, res) => {
     const users = await User.find()
@@ -50,7 +38,7 @@ exports.getDownloadExpenses = async (req, res) => {
         res.status(200).json(fileUrl);
     }catch(err){
         console.log('GET DOWNLOAD EXPENSES ERROR');
-        //console.log(err);
+        console.log(err);
         res.status(500).json({error: err, msg: 'Could not get download link'});
     }
 }

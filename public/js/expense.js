@@ -287,7 +287,10 @@ function parseJwt (token) {
 }
 
 function logoutUser(){
-    window.location.href = `${ORIGIN}/user/login`;
+    if(confirm('Are you sure you want to logout ?')){
+        localStorage.clear();
+        window.location.href = '/';
+    }
 }
 
 function downloadExpenses(){
@@ -359,7 +362,7 @@ function showLeaderboardInDOM(){
 function showDownloadInDOM(item, rank){
     const li = document.createElement('li');
     li.className = 'list-group-item list-group-item-warning';
-    li.innerHTML = `${rank}. <a href="${item.fileURL}">${item.createdAt}</a>`;
+    li.innerHTML = `${rank}. <a href="${item.fileUrl}">${item.createdAt}</a>`;
     downloadHistoryList.appendChild(li);
 }
 

@@ -74,4 +74,20 @@ userSchema.methods.getExpensesArray = function(){
     return expenses;
 }
 
+userSchema.methods.getExpenseAtIndex = function(index){
+    const expense = this.expenseDetails[index];
+    if(!expense){
+        return null;
+    }
+    
+    return {
+        id: expense._id.toString(),
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        createdAt: expense.createdAt,
+        updatedAt: expense.updatedAt
+    };
+}
+
 module.exports = model('User', userSchema);

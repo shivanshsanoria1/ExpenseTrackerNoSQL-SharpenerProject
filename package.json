@@ -22,11 +22,7 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.4.1",
-    "morgan": "^1.10.0",
-    "mysql2": "^3.0.1",
     "razorpay": "^2.8.4",
-    "sequelize": "^6.28.0",
-    "sib-api-v3-sdk": "^8.5.0",
-    "uuid": "^9.0.0"
+    "sib-api-v3-sdk": "^8.5.0"
   }
 }

@@ -9,9 +9,7 @@ exports.getAddExpense = (req, res) => {
 exports.postAddExpense = async (req, res) => {
     try{
         const amount = parseInt(req.body.amount);
-        const description = req.body.description;
-        const category = req.body.category;
-        const expenseId = req.body.expenseId;
+        const { description, category, expenseId } = req.body;
         const user = req.user;
 
         if(!amount || !description || !category){
@@ -21,6 +19,7 @@ exports.postAddExpense = async (req, res) => {
         
         let expense = null;
         let updatedBalance = null;
+        let index = 0;
 
         if(!expenseId){ // add a new expense
             expense = new Expense({
@@ -37,6 +36,7 @@ exports.postAddExpense = async (req, res) => {
                 res.status(404).json({ msg: 'Item not found' });
                 return;
             }
+            index = expenseToEditIndex;
             expense = user.expenseDetails[expenseToEditIndex];
             const amountToEdit = expense.amount;
             expense.amount = amount;
@@ -49,14 +49,7 @@ exports.postAddExpense = async (req, res) => {
         user.balance = updatedBalance;
         await user.save();
 
-        res.status(200).json({
-            id: expense._id.toString(),
-            amount: expense.amount,
-            description: expense.description,
-            category: expense.category,
-            createdAt: expense.createdAt,
-            updatedAt: expense.updatedAt
-        });
+        res.status(200).json(user.getExpenseAtIndex(index));
     }catch(err){
         console.log('POST ADD EXPENSE ERROR');
         //console.log(err);
@@ -102,11 +95,13 @@ exports.deleteDeleteExpense = async (req, res) => {
             res.status(404).json({ msg: 'Item not found' });
             return;
         }
+
         const amountToDelete = user.expenseDetails[expenseToDeleteIndex].amount;
         const updatedExpenses = user.expenseDetails.filter((exp) => exp._id.toString() !== expenseId);
         user.expenseDetails = updatedExpenses;
         user.balance -= amountToDelete;
         await user.save();
+
         res.status(200).json({ amount: amountToDelete }); 
     }catch(err){
         console.log('POST DELETE EXPENSE ERROR');
@@ -125,15 +120,8 @@ exports.getEditExpense = async (req, res) => {
             res.status(404).json({ msg: 'Item not found' });
             return;
         }
-        const expense = user.expenseDetails[expenseToEditIndex];
-        res.status(200).json({
-            id: expense._id.toString(),
-            amount: expense.amount,
-            description: expense.description,
-            category: expense.category,
-            createdAt: expense.createdAt,
-            updatedAt: expense.updatedAt
-        });
+        
+        res.status(200).json(user.getExpenseAtIndex(expenseToEditIndex));
     }catch(err){
         console.log('GET EDIT EXPENSE ERROR');
         //console.log(err);

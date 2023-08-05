@@ -1,7 +1,7 @@
 const Razorpay = require('razorpay');
 
 const Order = require('../models/order');
-const userController = require('./user');
+const { generateAccessToken } = require('../helpers/jwtHelper');
 
 exports.purchasePremium = async (req, res) => {
     try{
@@ -50,7 +50,7 @@ exports.updateTransactionStatus = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 msg: 'Transaction Successful', 
-                token: userController.generateAccessToken(user._id, user.username, true)
+                token: generateAccessToken(user)
             });
 
         }else{

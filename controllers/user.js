@@ -1,49 +1,37 @@
 const path = require('path');
 
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
-const { isPremiumUser } = require('../middleware/auth');
-
-function generateAccessToken(id, name, isPremiumUser){
-    return jwt.sign({
-        userId: id.toString(), 
-        username: name, 
-        isPremiumUser
-        }, process.env.JWT_SECRET_KEY
-    );
-}
-
-exports.generateAccessToken = generateAccessToken;
+const { generateAccessToken } = require('../helpers/jwtHelper');
 
 exports.getSignup = (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'signup.html'));
 };
 
 exports.postSignup = async (req, res) => {
-    const username = req.body.username;
-    const email = req.body.email;
-    const password = req.body.password;
-
-    if(!username || !email || !password){
-        res.status(400).json({ msg: 'All fields are required' });
-        return;
-    }
-
     try{
+        const { username, email, password } = req.body;
+
+        if(!username || !email || !password){
+            res.status(400).json({ msg: 'All fields are required' });
+            return;
+        }
+
         const hash = await bcrypt.hash(password, 10); // 10 salt rounds
+
         const user = new User({
             username: username,
             email: email,
-            password: hash,
-            balance: 0,
-            isPremiumUser: 0
+            password: hash
         });
+
         await user.save();
-        res.status(201).json({ userData: user, msg: 'User added successfuly' });
+
+        res.status(201).json({ msg: 'User added successfuly' });
     }catch(err){
         console.log('POST USER SIGNIN ERROR');
+        //console.log(err);
         // MongoServerError: E11000 duplicate key error collection
         if(err.code === 11000){
             res.status(400).json({ error: err, msg: 'Email is already registered' });
@@ -58,16 +46,15 @@ exports.getLogin = (req, res) => {
 };
 
 exports.postLogin = async (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-
-    if(!email || !password){
-        res.status(400).json({ msg: 'All fields are required' });
-        return;
-    }
-    
     try{
-        const user = await User.findOne({ email: email }).exec();
+        const { email, password } = req.body;
+
+        if(!email || !password){
+            res.status(400).json({ msg: 'All fields are required' });
+            return;
+        }
+
+        const user = await User.findOne({ email: email });
         if(!user){
             res.status(404).json({ msg: 'Email not registered' });
             return;
@@ -75,17 +62,18 @@ exports.postLogin = async (req, res) => {
         
         const hash = user.password;
         const match = await bcrypt.compare(password, hash);
-        if(match){
-            res.status(200).json({ 
-                msg: 'User logged in successfully', 
-                token: generateAccessToken(user._id, user.username, user.isPremiumUser) 
-            });
-            return;
-        }else{
+        if(!match){
             res.status(401).json({ msg: 'Incorrect Password' });
+            return;
         }
+        
+        res.status(200).json({ 
+            msg: 'User logged in successfully', 
+            token: await generateAccessToken(user) 
+        });
     }catch(err){
         console.log('POST USER LOGIN ERROR');
+        //console.log(err);
         res.status(500).json({ error: err, msg: 'Could not fetch user' });
     }
 };

@@ -15,7 +15,7 @@ const errorController = require('./controllers/error');
 
 const app = express();
 
-app.use(bodyParser.json({ extended: false } ));
+app.use(bodyParser.json({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(homepageRoutes);
@@ -26,12 +26,12 @@ app.use('/premium', premiumRoutes);
 app.use('/password', passwordRoutes);
 app.use(errorController.get404);
 
-const mongoDBClusterUser = process.env.mongoDBClusterUser;
-const mongoDBClusterPassword = process.env.mongoDBClusterPassword;
-const databaseName = 'expenseTrackerNoSQL';
+const mongoDbClusterUser = process.env.MONGODB_CLUSTER_USER;
+const mongoDbClusterPassword = process.env.MONGODB_CLUSTER_PASSWORD;
+const mongoDbDbName = process.env.MONGODB_DB_NAME;
 
 mongoose
-.connect(`mongodb+srv://${mongoDBClusterUser}:${mongoDBClusterPassword}@clustertest1.rlecsbt.mongodb.net/${databaseName}?retryWrites=true&w=majority`)
+.connect(`mongodb+srv://${mongoDbClusterUser}:${mongoDbClusterPassword}@clustertest1.rlecsbt.mongodb.net/${mongoDbDbName}?retryWrites=true&w=majority`)
 .then(() => {
 	console.log('mongodb connected at ' + Date.now());
 	app.listen(3000);
